@@ -1,1 +1,1015 @@
-hola
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Control de Comidas - Escaneo QR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 900px;
+        width: 100%;
+        padding: 30px;
+        margin: 0 auto;
+    }
+
+    h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 10px;
+        font-size: 28px;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .tab {
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .tab:hover {
+        color: #667eea;
+    }
+
+    .tab.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .scanner-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    #video-container {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto 20px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #000;
+        display: none;
+    }
+
+    #qr-video {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    #qr-canvas {
+        display: none;
+    }
+
+    .scan-region {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 250px;
+        height: 250px;
+        border: 3px solid #00ff00;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    }
+
+    .meal-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .meal-btn {
+        padding: 15px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        color: white;
+    }
+
+    .meal-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .meal-btn.desayuno {
+        background: #ff9800;
+    }
+
+    .meal-btn.almuerzo {
+        background: #4caf50;
+    }
+
+    .meal-btn.comida {
+        background: #2196f3;
+    }
+
+    .meal-btn.active {
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5), 0 0 0 6px currentColor;
+    }
+
+    .control-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 15px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    .btn-primary:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: #e0e0e0;
+        color: #333;
+    }
+
+    .btn-secondary:hover {
+        background: #d0d0d0;
+    }
+
+    .message {
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-weight: bold;
+        text-align: center;
+        display: none;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message.success {
+        background: #d4edda;
+        color: #155724;
+        border: 2px solid #c3e6cb;
+    }
+
+    .message.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 2px solid #f5c6cb;
+    }
+
+    .message.warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 2px solid #ffeaa7;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        color: #1565c0;
+    }
+
+    #manual-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    #manual-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .people-list {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+    }
+
+    .people-list h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+
+    .search-box {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        margin-bottom: 15px;
+    }
+
+    .search-box:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .person-card {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 12px;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .person-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .person-code {
+        font-weight: bold;
+        color: #667eea;
+        font-size: 16px;
+    }
+
+    .person-date {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .meal-tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .meal-tag {
+        padding: 6px 12px;
+        border-radius: 5px;
+        font-size: 13px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .meal-tag.desayuno {
+        background: #ff9800;
+    }
+
+    .meal-tag.almuerzo {
+        background: #4caf50;
+    }
+
+    .meal-tag.comida {
+        background: #2196f3;
+    }
+
+    .meal-tag.pendiente {
+        background: #e0e0e0;
+        color: #666;
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .clear-btn {
+        width: 100%;
+        padding: 12px;
+        background: #f44336;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 15px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .clear-btn:hover {
+        background: #d32f2f;
+    }
+
+    .history {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .history h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+
+    .history-item {
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border-left: 4px solid #667eea;
+    }
+
+    .history-item .date {
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 5px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #667eea;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Control de Comidas</h1>
+        <p class="subtitle">Sistema de registro con código QR</p>
+
+    <!-- Mensaje de resultado -->
+    <div id="message" class="message"></div>
+
+    <!-- Pestañas -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab(event, 'scanner')">📷 Registro</button>
+        <button class="tab" onclick="switchTab(event, 'people')">👥 Lista de Personas</button>
+        <button class="tab" onclick="switchTab(event, 'history')">📋 Historial</button>
+    </div>
+
+    <!-- TAB 1: REGISTRO -->
+    <div id="scanner-tab" class="tab-content active">
+        <div class="info-box">
+            📱 <strong>Opción 1:</strong> Selecciona el tipo de comida y escanea el código QR<br>
+            💻 <strong>Opción 2:</strong> Ingresa el código manualmente en el campo de texto
+        </div>
+
+        <!-- Selector de tipo de comida -->
+        <div class="meal-buttons">
+            <button class="meal-btn desayuno" onclick="selectMeal(event, 'desayuno')">
+                🌅 Desayuno
+            </button>
+            <button class="meal-btn almuerzo" onclick="selectMeal(event, 'almuerzo')">
+                ☀️ Almuerzo
+            </button>
+            <button class="meal-btn comida" onclick="selectMeal(event, 'comida')">
+                🌙 Comida
+            </button>
+        </div>
+
+        <!-- Sección del escáner -->
+        <div class="scanner-section">
+            <div id="video-container">
+                <video id="qr-video" autoplay playsinline></video>
+                <canvas id="qr-canvas"></canvas>
+                <div class="scan-region"></div>
+            </div>
+
+            <!-- Input manual como alternativa -->
+            <input type="text" id="manual-input" placeholder="Ingresa el código manualmente y presiona Enter" />
+
+            <div class="control-buttons">
+                <button class="btn btn-primary" id="start-btn" onclick="startScanner()">
+                    📷 Iniciar Escáner
+                </button>
+                <button class="btn btn-secondary" id="stop-btn" onclick="stopScanner()" disabled>
+                    ⏹️ Detener
+                </button>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%;" onclick="registerManual()">
+                ✅ Registrar Código Manual
+            </button>
+        </div>
+    </div>
+
+    <!-- TAB 2: LISTA DE PERSONAS -->
+    <div id="people-tab" class="tab-content">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-people">0</div>
+                <div class="stat-label">Personas Hoy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-meals">0</div>
+                <div class="stat-label">Comidas Hoy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pending-meals">0</div>
+                <div class="stat-label">Pendientes</div>
+            </div>
+        </div>
+
+        <div class="people-list">
+            <h3>👥 Personas Registradas Hoy</h3>
+            <input type="text" class="search-box" id="search-input" placeholder="🔍 Buscar por código..." onkeyup="filterPeople()">
+            <div id="people-container"></div>
+        </div>
+    </div>
+
+    <!-- TAB 3: HISTORIAL -->
+    <div id="history-tab" class="tab-content">
+        <div class="history">
+            <h3>📋 Historial (últimos 3 días)</h3>
+            <div id="history-list"></div>
+            <button class="clear-btn" onclick="clearOldData()">
+                🗑️ Limpiar datos antiguos (más de 3 días)
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Librerías para escaneo QR -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<script>
+    // Variables globales
+    let video = null;
+    let canvas = null;
+    let canvasContext = null;
+    let selectedMeal = null;
+    let isScanning = false;
+    let lastScannedCode = null;
+    let messageTimeout = null;
+    const STORAGE_KEY = 'meal_registrations';
+    const DAYS_TO_KEEP = 3;
+    const MAX_CODE_LENGTH = 200; // evita cadenas absurdas
+
+    // Inicializar la aplicación
+    document.addEventListener('DOMContentLoaded', function() {
+        video = document.getElementById('qr-video');
+        canvas = document.getElementById('qr-canvas');
+        canvasContext = canvas.getContext('2d');
+
+        // Events
+        document.getElementById('manual-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                registerManual();
+            }
+        });
+
+        loadHistory();
+        loadPeopleList();
+        cleanOldRecords();
+        updateStats();
+    });
+
+    // Cambiar entre pestañas
+    function switchTab(evt, tabName) {
+        // Ocultar todos los contenidos
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // Desactivar todas las pestañas
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Activar la pestaña seleccionada
+        if (evt && evt.target) {
+            evt.target.classList.add('active');
+        }
+        document.getElementById(tabName + '-tab').classList.add('active');
+
+        // Si cambiamos de pestaña, detener el escáner
+        if (tabName !== 'scanner' && isScanning) {
+            stopScanner();
+        }
+
+        // Actualizar datos al cambiar a ciertas pestañas
+        if (tabName === 'people') {
+            loadPeopleList();
+            updateStats();
+        } else if (tabName === 'history') {
+            loadHistory();
+        }
+    }
+
+    // Seleccionar tipo de comida
+    function selectMeal(evt, mealType) {
+        selectedMeal = mealType;
+
+        // Actualizar estilos visuales
+        document.querySelectorAll('.meal-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        if (evt && evt.target) {
+            evt.target.classList.add('active');
+        }
+
+        showMessage(`Tipo de comida seleccionada: ${getMealName(mealType)}`, 'success');
+    }
+
+    // Obtener nombre legible de la comida
+    function getMealName(mealType) {
+        const names = {
+            'desayuno': 'Desayuno 🌅',
+            'almuerzo': 'Almuerzo ☀️',
+            'comida': 'Comida 🌙'
+        };
+        return names[mealType] || mealType;
+    }
+
+    // Iniciar escáner de QR
+    async function startScanner() {
+        if (!selectedMeal) {
+            showMessage('⚠️ Primero selecciona el tipo de comida', 'warning');
+            return;
+        }
+
+        if (isScanning) {
+            showMessage('⚠️ El escáner ya está activo', 'warning');
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" }
+            });
+
+            video.srcObject = stream;
+            video.setAttribute("playsinline", true);
+            await video.play();
+
+            document.getElementById('video-container').style.display = 'block';
+            isScanning = true;
+            lastScannedCode = null;
+
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+
+            showMessage('📷 Escáner iniciado. Apunta al código QR', 'success');
+
+            // Iniciar el escaneo continuo
+            requestAnimationFrame(tick);
+
+        } catch (err) {
+            showMessage('❌ Error al acceder a la cámara. Usa el registro manual.', 'error');
+            console.error('Error al acceder a la cámara:', err);
+        }
+    }
+
+    // Función de escaneo continuo
+    function tick() {
+        if (!isScanning) return;
+
+        try {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                // Ajustar canvas al video (si es 0, reintentar)
+                if (video.videoWidth === 0 || video.videoHeight === 0) {
+                    requestAnimationFrame(tick);
+                    return;
+                }
+
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
+
+                if (code && code.data) {
+                    // Evita registros repetidos inmediatos
+                    if (code.data !== lastScannedCode) {
+                        lastScannedCode = code.data;
+                        registerMeal(code.data);
+                    }
+                    // Pausar un poco para evitar lecturas continuas
+                    setTimeout(() => {
+                        if (isScanning) requestAnimationFrame(tick);
+                    }, 1200);
+                } else {
+                    // No hay código, reset del último escaneado para permitir nueva lectura
+                    lastScannedCode = null;
+                    requestAnimationFrame(tick);
+                }
+            } else {
+                requestAnimationFrame(tick);
+            }
+        } catch (err) {
+            console.error('Error en tick:', err);
+            requestAnimationFrame(tick);
+        }
+    }
+
+    // Detener escáner
+    function stopScanner() {
+        isScanning = false;
+        lastScannedCode = null;
+
+        if (video && video.srcObject) {
+            const tracks = video.srcObject.getTracks();
+            tracks.forEach(track => track.stop());
+            video.srcObject = null;
+        }
+
+        document.getElementById('video-container').style.display = 'none';
+        document.getElementById('start-btn').disabled = false;
+        document.getElementById('stop-btn').disabled = true;
+
+        showMessage('⏹️ Escáner detenido', 'success');
+    }
+
+    // Registrar código manualmente
+    function registerManual() {
+        const manualInput = document.getElementById('manual-input');
+        const code = manualInput.value.trim();
+
+        if (!code) {
+            showMessage('⚠️ Ingresa un código válido', 'warning');
+            return;
+        }
+
+        if (!selectedMeal) {
+            showMessage('⚠️ Primero selecciona el tipo de comida', 'warning');
+            return;
+        }
+
+        registerMeal(code);
+        manualInput.value = '';
+    }
+
+    // Registrar comida
+    function registerMeal(qrCode) {
+        // Validaciones básicas
+        if (!qrCode || typeof qrCode !== 'string') {
+            showMessage('❌ Código inválido', 'error');
+            return;
+        }
+
+        if (qrCode.length > MAX_CODE_LENGTH) {
+            showMessage('❌ Código demasiado largo', 'error');
+            return;
+        }
+
+        // Opcional: sanear espacios
+        qrCode = qrCode.trim();
+
+        const today = getTodayDate();
+        const registrations = getRegistrations();
+
+        // Crear estructura si no existe
+        if (!registrations[today]) {
+            registrations[today] = {};
+        }
+
+        if (!registrations[today][qrCode]) {
+            registrations[today][qrCode] = [];
+        }
+
+        // Verificar si ya registró esta comida hoy
+        if (!selectedMeal) {
+            showMessage('⚠️ Selecciona un tipo de comida antes de registrar', 'warning');
+            return;
+        }
+
+        if (registrations[today][qrCode].includes(selectedMeal)) {
+            showMessage(
+                `❌ Tarjeta ${qrCode.substring(0, 10)}... ya registró ${getMealName(selectedMeal)} hoy`,
+                'error'
+            );
+            return;
+        }
+
+        // Registrar la comida
+        registrations[today][qrCode].push(selectedMeal);
+        saveRegistrations(registrations);
+
+        showMessage(
+            `✅ ${getMealName(selectedMeal)} registrado para: ${qrCode.substring(0, 12)}...`,
+            'success'
+        );
+
+        loadHistory();
+        loadPeopleList();
+        updateStats();
+    }
+
+    // Obtener fecha de hoy en formato YYYY-MM-DD (consistente localmente)
+    function getTodayDate() {
+        const today = new Date();
+        // Construimos fecha local sin depender de toISOString (evita shifts inesperados)
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    // Obtener registros del localStorage
+    function getRegistrations() {
+        const data = localStorage.getItem(STORAGE_KEY);
+        try {
+            return data ? JSON.parse(data) : {};
+        } catch (e) {
+            console.error('Error parseando localStorage, reseteando key:', e);
+            localStorage.removeItem(STORAGE_KEY);
+            return {};
+        }
+    }
+
+    // Guardar registros en localStorage
+    function saveRegistrations(registrations) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
+    }
+
+    // Limpiar registros antiguos (más de DAYS_TO_KEEP días)
+    function cleanOldRecords() {
+        const registrations = getRegistrations();
+        const today = new Date();
+        const cutoffDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // midnight local
+        cutoffDate.setDate(cutoffDate.getDate() - DAYS_TO_KEEP);
+
+        let cleaned = false;
+        Object.keys(registrations).forEach(dateStr => {
+            // Interpretar fecha en formato YYYY-MM-DD de forma consistente
+            const recordDate = new Date(dateStr + 'T00:00:00');
+            if (recordDate < cutoffDate) {
+                delete registrations[dateStr];
+                cleaned = true;
+            }
+        });
+
+        if (cleaned) {
+            saveRegistrations(registrations);
+        }
+    }
+
+    // Cargar lista de personas del día actual
+    function loadPeopleList() {
+        const registrations = getRegistrations();
+        const today = getTodayDate();
+        const todayData = registrations[today] || {};
+        const peopleContainer = document.getElementById('people-container');
+
+        peopleContainer.innerHTML = '';
+
+        if (Object.keys(todayData).length === 0) {
+            peopleContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No hay personas registradas hoy</p>';
+            return;
+        }
+
+        // Ordenar por número de comidas (más comidas primero)
+        const sortedPeople = Object.entries(todayData).sort((a, b) => {
+            return b[1].length - a[1].length;
+        });
+
+        sortedPeople.forEach(([qrCode, meals]) => {
+            const personCard = document.createElement('div');
+            personCard.className = 'person-card';
+            personCard.dataset.code = qrCode;
+
+            const allMeals = ['desayuno', 'almuerzo', 'comida'];
+            let mealsHtml = '';
+
+            allMeals.forEach(meal => {
+                if (meals.includes(meal)) {
+                    mealsHtml += `<span class="meal-tag ${meal}">${getMealName(meal)}</span>`;
+                } else {
+                    mealsHtml += `<span class="meal-tag pendiente">${getMealName(meal)}</span>`;
+                }
+            });
+
+            const completedMeals = meals.length;
+
+            personCard.innerHTML = `
+                <div class="person-header">
+                    <div class="person-code">${qrCode.substring(0, 16)}${qrCode.length > 16 ? '...' : ''}</div>
+                    <div class="person-date">${completedMeals}/3 comidas</div>
+                </div>
+                <div class="meal-tags">${mealsHtml}</div>
+            `;
+
+            peopleContainer.appendChild(personCard);
+        });
+    }
+
+    // Filtrar personas en la búsqueda
+    function filterPeople() {
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        const personCards = document.querySelectorAll('.person-card');
+
+        personCards.forEach(card => {
+            const code = (card.dataset.code || '').toLowerCase();
+            if (code.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Actualizar estadísticas
+    function updateStats() {
+        const registrations = getRegistrations();
+        const today = getTodayDate();
+        const todayData = registrations[today] || {};
+
+        const totalPeople = Object.keys(todayData).length;
+        let totalMeals = 0;
+        let pendingMeals = 0;
+
+        Object.values(todayData).forEach(meals => {
+            totalMeals += meals.length;
+            pendingMeals += (3 - meals.length);
+        });
+
+        document.getElementById('total-people').textContent = totalPeople;
+        document.getElementById('total-meals').textContent = totalMeals;
+        document.getElementById('pending-meals').textContent = pendingMeals;
+    }
+
+    // Cargar historial
+    function loadHistory() {
+        const registrations = getRegistrations();
+        const historyList = document.getElementById('history-list');
+        historyList.innerHTML = '';
+
+        // Ordenar fechas de más reciente a más antigua
+        const dates = Object.keys(registrations).sort().reverse();
+
+        if (dates.length === 0) {
+            historyList.innerHTML = '<p style="text-align: center; color: #999;">No hay registros todavía</p>';
+            return;
+        }
+
+        dates.forEach(date => {
+            const dateObj = new Date(date + 'T00:00:00');
+            const formattedDate = dateObj.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const qrCodes = registrations[date];
+            const totalPeople = Object.keys(qrCodes).length;
+            // Reemplazamos flat() por reduce para compatibilidad
+            const totalMeals = Object.values(qrCodes).reduce((acc, arr) => acc + arr.length, 0);
+
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+
+            // Contar por tipo de comida
+            const mealCount = { desayuno: 0, almuerzo: 0, comida: 0 };
+            Object.values(qrCodes).forEach(meals => {
+                meals.forEach(meal => {
+                    if (mealCount.hasOwnProperty(meal)) {
+                        mealCount[meal]++;
+                    }
+                });
+            });
+
+            historyItem.innerHTML = `
+                <div class="date">${formattedDate}</div>
+                <div style="font-size: 13px; color: #666; margin-top: 8px;">
+                    <strong>${totalPeople}</strong> personas • <strong>${totalMeals}</strong> comidas registradas
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px; font-size: 12px;">
+                    <span style="color: #ff9800;">🌅 Desayunos: ${mealCount.desayuno}</span>
+                    <span style="color: #4caf50;">☀️ Almuerzos: ${mealCount.almuerzo}</span>
+                    <span style="color: #2196f3;">🌙 Comidas: ${mealCount.comida}</span>
+                </div>
+            `;
+
+            historyList.appendChild(historyItem);
+        });
+    }
+
+    // Limpiar datos antiguos manualmente
+    function clearOldData() {
+        if (confirm('¿Estás seguro de que quieres eliminar todos los datos antiguos (más de 3 días)?')) {
+            cleanOldRecords();
+            loadHistory();
+            loadPeopleList();
+            updateStats();
+            showMessage('✅ Datos antiguos eliminados correctamente', 'success');
+        }
+    }
+
+    // Mostrar mensaje
+    function showMessage(text, type) {
+        const messageDiv = document.getElementById('message');
+
+        // Limpiar timeout anterior para evitar solapamientos
+        if (messageTimeout) {
+            clearTimeout(messageTimeout);
+            messageTimeout = null;
+        }
+
+        messageDiv.textContent = text;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = 'block';
+
+        messageTimeout = setTimeout(() => {
+            messageDiv.style.display = 'none';
+            messageTimeout = null;
+        }, 5000);
+    }
+</script>
+</body>
+</html>
